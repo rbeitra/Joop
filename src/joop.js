@@ -65,9 +65,9 @@ var Joop = Joop || {
         return target;
     },
     l: function (target, path, value) {//link value at path in target.
-        var endPart = path.split('.').pop();
-        target = this.g(target, path, true, -1);//now get the parent, which could == target if parts.length == 1
-        this.c(this.e(target, endPart, {}), value);
+        var endPart = path.split('.').pop(), t = this;
+        target = t.g(target, path, true, -1);//now get the parent, which could == target if parts.length == 1
+        t.c(t.e(target, endPart, {}), value);
         target[endPart] = value;
     },
     define: function (classname, definition) {//create a constructor and link it in the global scope
@@ -76,41 +76,44 @@ var Joop = Joop || {
             x = k.x,//extend/inherit
             m = k.m,//members
             s = k.s,//statics
-            c = k.c,//constructor
             f = k.f,//non-constructor
             n = k.n,//classname
-            G = t.f(t.e(definition, k.p, {})),//ensure we have a prototype
+            c = k.c,//constructor
+            ensure = t.e,//shortcut to t.e
+            copy = t.c,//shortcut to t.c
+            G = t.f(ensure(definition, k.p, {})),//ensure we have a prototype
             p = new G();
             
         //inherit from any base classes
-        a = t.e(definition, x, []);
+        a = ensure(definition, x, []);
         for (i = 0; i < a.length; i += 1) {
             j = (typeof a[i] === 'string') ? a[i] : a[i][n];//we accept Joop constructors and strings.
             b = t.g(t.$, j, false, 0);//find the constructor in our scope
-            t.c(b.prototype, p);
-            t.c(b.prototype, p, j + '.');
+            copy(b.prototype, p);
+            copy(b.prototype, p, j + '.');
             p[j] = b;//give a reference to the inherited constructor
         } 
         
         //add any members
-        t.c(t.e(definition, m, {}), p);
+        copy(ensure(definition, m, {}), p);
         
         //non-constructor function
-        i = t.e(definition, f, t.f());
+        i = ensure(definition, f, t.f());
                     
         //create a constructor function
-        t.e(definition, c, function () {//default constructor will take an init object and copy its contents
-            t.c(arguments[0] || {}, this);
+        ensure(definition, c, function () {//default constructor will take an init object and copy its contents
+            copy(arguments[0] || {}, this);
         });
         a = function () {
+            b = arguments;
             if (this[this[n]]) {//check if we have this constructor!
-                return definition[c].apply(this, arguments);
+                return definition[c].apply(this, b);
             }
-            return i.apply(a, arguments);
+            return i.apply(a, b);
         };
         
         //add any class variables
-        t.c(t.e(definition, s, {}), a);
+        copy(ensure(definition, s, {}), a);
         
         p[classname] = a;
         p[n] = classname;
@@ -123,5 +126,6 @@ var Joop = Joop || {
         if (classname) {
             t.l(t.$, classname, a);
         }
+        return a;
     }
 };

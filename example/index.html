@@ -35,7 +35,7 @@ h1, h2, h3, h4, h5, h6{
 }
 </style>
 <title>Joop</title>
-<script type="text/javascript" src="../src/joop.js"></script>
+<script type="text/javascript" src="../src/joop-min.js"></script>
 </head>
 <body>
 <script type="text/javascript">
@@ -208,18 +208,12 @@ Joop.define("Example", {
             eval("this.fun = function f() {" + this.code + "}");//yuck
         }
         //need to remove the containing function when we display
-        //this.code = this.code.replace(/^\s*function\s*\(\s*\)\s*{/g, '').replace(/}\s*$/g, '');
     },
     members: {
         display: function(parentID){
             $('#'+parentID).div('', {id: "example"+this.id, className: 'example'});
             var div = $('#example'+this.id);
-            //div.appendChildTag('a', '#', {name: 'example'+this.id});
             div.appendChildTag('h3', this.name);
-            //var lines = this.description.split("\n");
-            //for(var i = 0; i < lines.length; ++i){
-            //    div.p(lines[i]);
-            //}
             if(this.description){
                 div.appendChild(this.description);
             }
@@ -250,9 +244,6 @@ Joop.define("Example", {
         examples: [],
         register: function(example, id){
             Example.examples[id] = example;
-            //var id = Example.examples.length;
-            //Example.examples.push(example);
-            //return id;
         },
         run: function(id){
             //run all previous examples too...
@@ -328,7 +319,6 @@ echo(b);
 </textarea>
 <div id="description2"><p>How about some constants and static functions</p></div>
 <textarea id="code2">
-//Let's define somem new Math tools
 Joop.define("Math2", {
     statics:{
         distance: function(a, b, p){
@@ -371,9 +361,89 @@ echo(Math2.distance(a, b, 0));
 //a constant we have defined
 echo(Math2.TWOPI);
 </textarea>
+<div id="description3"><p>Let's use the fun to do some new stuff</p></div>
+<textarea id="code3">
+Joop.define("Fun", {
+    fun: function(){
+        echo("This is the Fun() method");
+    },
+    init: function(){
+        echo("This is the Fun() constructor");
+    }
+});
+//We can now call Fun as a method
+Fun();
+//or use it as a constructor
+var w = new Fun();
+
+//so lets try something
+Joop.define("PointN", {
+    fun: function(N){
+        var className = "Point"+N;
+        var specialized;
+        if(Joop.$[className] !== undefined){
+            echo("\/\/reusing definition of " + className);
+            specialized = Joop.$[className];
+        } else {
+            echo("\/\/creating definition for " + className);
+            var alpha = 'abcdefghijklmnopqrstuvwxyz';
+            var varNames = [];
+            for(var j = 0; j < N; ++j){
+                var varName = alpha[j%alpha.length];
+                if(j >= alpha.length){
+                    varName += Math.floor(j/alpha.length);
+                }
+                varNames.push(varName);
+            }
+            specialized = Joop.define(className, {
+                base: [PointN],
+                init: function(){
+                    var max = Math.min(arguments.length, N);
+                    for(var i = 0; i < max; ++i){
+                        this[varNames[i]] = arguments[i];
+                    }
+                    for(;i < N; ++i){
+                        this[varNames[i]] = 0;
+                    }
+                },
+                members: {
+                    length: function(){
+                        var sum = 0;
+                        for(var i = 0; i < N; ++i){
+                            var val = this[varNames[i]];
+                            sum += val*val;
+                        }
+                        return Math.sqrt(sum);
+                    }
+                }
+            });
+        }
+        return specialized;
+    },
+    members: {
+        toString: function(){//a general purpose toString()
+            var result = this.classname+"{";
+            for(var name in this){
+                if(this.hasOwnProperty(name)){
+                    result += name+":" + this[name]+",";
+                }
+            }
+            result += "}";
+            return result;
+        }
+    }
+});
+
+var a = new (PointN(5))();
+echo(a);
+var b = new (PointN(5))(1, 2, 3, 4, 5);
+echo(b);
+echo(b.length());
+</textarea>
 <script type="text/javascript">
 var example0 = new Example('Example 0: Defining a class', "0").display("examples");
 var example1 = new Example('Example 1: Inheriting from a class', "1").display("examples");
 var example3 = new Example('Example 2: Some static members', "2").display("examples");
+var example4 = new Example('Example 3: Fun stuff', "3").display("examples");
 </script>
 </body></html>
