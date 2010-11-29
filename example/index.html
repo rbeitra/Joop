@@ -1,0 +1,379 @@
+<html>
+<head>
+<style type="text/css">
+* {
+    padding: 0;
+    margin: 0;
+    background-color: transparent;
+}
+body{
+    font-size: 100%;
+    font-family: "TeX Gyre Termes", "Times New Roman", Times, serif;
+    line-height: 1.25em;
+}
+img{
+    border: 0;
+}
+a:link{text-decoration: none; color: #ff0000;}
+a:active{text-decoration: none; color: #800000;}
+a:visited{text-decoration: none; color: #ff0000;}
+a:hover{text-decoration: underline;}
+h1, h2, h3, h4, h5, h6{
+    font-family: "TeX Gyre Heros", Helvetica, sans-serif;
+    font-weight: bold;
+    line-height: 100%;
+}
+#examples{
+    padding: 0.5em;    
+}
+.example{
+    padding: 0.5em;
+}
+.example a{
+    background-color: #f0f0f0;
+    border: 0.1em solid #808080;
+}
+</style>
+<title>Joop</title>
+<script type="text/javascript" src="../src/joop.js"></script>
+</head>
+<body>
+<script type="text/javascript">
+//a little println thing
+Joop.define('echo', {
+    fun: function(){
+        var s = ''
+        for(var i = 0; i < arguments.length; ++i){
+            s += (i?', ':'') + arguments[i];
+        }
+        echo.echoFunction(s);
+    },
+    statics: {
+        set: function(f){
+            echo.echoFunction = f;
+        },
+        restore: function(){
+            echo.set(function(){
+                document.write("<br/>\n");
+            });
+        },
+        object: function(o){
+            echo(o);
+            for(var n in o){
+                echo(n + ":" + o[n]);
+            }
+        },
+        echoFunction: function(){
+            document.write("<br/>\n");
+        },
+    }
+});
+
+//a utility class for manipulating the page
+Joop.define('$', {
+    fun: function(items){
+        return new $(items);
+    },
+    init: function(input){
+        if(typeof input === 'string'){
+            this.items = [];
+            var all = document.getElementsByTagName("*");
+            var matcher = $.matcher(input);
+            for(var i = 0, max = all.length; i < max; ++i){
+                var item = all[i];
+                if(matcher(item)){
+                    this[''+this.items.length] = item;
+                    this.items.push(item);
+                }
+            }
+        } else {
+            this.items = input
+        }
+    },
+    members:{
+        appendChild: function(){
+            for(var j = 0; j < arguments.length; ++j){
+                for(var i = 0, max = this.items.length; i < max; ++i){
+                    this.items[i].appendChild(arguments[j]);
+                }
+            }
+            return this;
+        },
+        appendChildTag: function(tagName, content, attributes){
+            for(var i = 0, max = this.items.length; i < max; ++i){
+                this.items[i].appendChild($.tag(tagName, content, attributes));
+            }
+            return this;
+        },
+        div: function(content, attributes){
+            this.appendChildTag('div', content, attributes);
+            return this;
+        },
+        p: function(content, attributes){
+            this.appendChildTag('p', content, attributes);
+            return this;
+        },
+        br: function(){
+            this.appendChildTag('br');
+            return this;
+        },
+        a: function(content, href, attributes){
+            attributes = attributes || {};
+            var old = attributes.href;
+            attributes.href = href;
+            this.appendChildTag('a', content, attributes);
+            attributes.href = old;
+            return this;
+        },
+        img: function(src, attributes){
+            attributes = attributes || {};
+            var old = attributes.src;
+            attributes.src = src;
+            this.appendChildTag('img', '', attributes);
+            attributes.src = old;
+            return this;
+        },
+        innerHTML: function(){
+            if(arguments.length > 0){
+                for(var i = 0, max = this.items.length; i < max; ++i){
+                    this.items[i].innerHTML = arguments[0];
+                }
+            }
+            return this;
+        },
+        attributes: function(attributes){
+            for(var i = 0, max = this.items.length; i < max; ++i){
+                $.attributes(this.items[i], attributes);
+            }
+            return this;
+        },
+        alert: function(){
+            for(var i = 0, max = this.items.length; i < max; ++i){
+                alert(this.items[i]);
+            }
+            return this;
+        }
+    },
+    statics: {
+        matcher: function(query){
+            if(query[0] === "#"){
+                var id = query.substring(1);
+                return function(item){return item.id == id;};
+            } else if(query[0] == '.'){
+                var className = query.substring(1);
+                return function(item){return item.className == className;};
+            } else {
+                var tagName = query.toUpperCase();
+                return function(item){return item.tagName == tagName;};
+            }
+        },
+        tag: function(tagName, content, attributes){
+            var result = document.createElement(tagName);
+            content = content || '';
+            $.attributes(result, attributes);
+            if(content != '') result.innerHTML = content;
+            return result;
+        },
+        attributes: function(element, attributes){
+            attributes = attributes || {};
+            if(attributes.id){
+                element.id = attributes.id;
+            }
+            if(attributes.className){
+                element.className = attributes.className;
+            }
+            for(var name in attributes){
+                if(name != 'id' && name != 'className'){
+                    element.setAttribute(name, attributes[name]);
+                }
+            }
+
+        }
+    }
+});
+
+//ok lets make a class for displaying examples
+Joop.define("Example", {
+    init: function(name, id){
+        this.id = id;
+        this.name = name;
+        Example.register(this, id);
+        this.codeid = "code"+this.id;
+        this.outid = "out"+this.id;
+        this.description = $("#description"+this.id)[0];
+        this.codeArea = $("#"+this.codeid)[0];
+        if(this.codeArea){
+            this.code = this.codeArea.value;
+            this.code = this.code.replace(/[\n]\/\/([^\n]*)\n/g, "\necho(\"\/\/$1\")\n");
+            eval("this.fun = function f() {" + this.code + "}");//yuck
+        }
+        //need to remove the containing function when we display
+        //this.code = this.code.replace(/^\s*function\s*\(\s*\)\s*{/g, '').replace(/}\s*$/g, '');
+    },
+    members: {
+        display: function(parentID){
+            $('#'+parentID).div('', {id: "example"+this.id, className: 'example'});
+            var div = $('#example'+this.id);
+            //div.appendChildTag('a', '#', {name: 'example'+this.id});
+            div.appendChildTag('h3', this.name);
+            //var lines = this.description.split("\n");
+            //for(var i = 0; i < lines.length; ++i){
+            //    div.p(lines[i]);
+            //}
+            if(this.description){
+                div.appendChild(this.description);
+            }
+            if(this.codeArea){
+                this.codeArea.parentNode.removeChild(this.codeArea);
+                div.appendChild(this.codeArea)
+                .appendChildTag('textarea', '', {id: this.outid})
+                .a('Run()', '#', {onclick: "Example.run("+this.id+"); return false;"});
+                var numLines = this.code.split("\n").length
+                $("#"+this.codeid).attributes({cols: 80, rows: numLines, readOnly: true});
+                $("#"+this.outid).attributes({cols: 40, rows: numLines, readOnly: true});
+            }
+        },
+        println: function(ln){
+            $('#'+this.outid)[0].value += ln + "\n";
+        },
+        clear: function(){
+            $('#'+this.outid)[0].value = '';
+        },
+        run: function(){
+            this.clear();
+            var that = this;
+            echo.set(function(ln){that.println(ln)});
+            this.fun.apply(this);
+        }
+    },
+    statics: {
+        examples: [],
+        register: function(example, id){
+            Example.examples[id] = example;
+            //var id = Example.examples.length;
+            //Example.examples.push(example);
+            //return id;
+        },
+        run: function(id){
+            //run all previous examples too...
+            for(var i = 0; i <= id; ++i){
+                Example.examples[i].run();
+            }
+        },
+        clear: function(id){
+            Example.examples[id].clear()
+        }
+    }
+});
+
+$('body').appendChildTag("h1", "Joop");
+$('body').div('', {id: 'examples'});
+$('#examples').appendChildTag("h2", "Let's try some examples");
+</script>
+<div id="description0">
+<p>Let's define a new class, a 2d point</p>
+</div>
+<textarea id="code0">
+Joop.define('Point2', {
+    init: function(x, y){
+        this.x = x || 0;
+        this.y = y || 0;
+    },
+    members: {
+        length: function(){
+            return Math.sqrt(this.x*this.x+this.y*this.y);
+        },
+        toString: function(){//a general purpose toString()
+            var result = this.classname+"{";
+            for(var name in this){
+                if(this.hasOwnProperty(name)){
+                    result += name+":" + this[name]+",";
+                }
+            }
+            result += "}";
+            return result;
+        }
+    }
+});
+
+//Let's create a new Point2
+var a = new Point2(3, 4);
+echo("a: " + a);
+echo("a.length(): " + a.length());//
+//Let's call the constructor again to change the parameters
+a.Point2(5, 12);
+echo(a);
+</textarea>
+<div id="description1"><p>Let's inherit from our Point2 class</p></div>
+<textarea id="code1">
+Joop.define('Point3', {
+    base: [Point2],
+    init: function(x, y, z){
+        this.Point2(x, y);
+        this.z = z || 0;
+    },
+    members: {
+        length: function(){
+            return Math.sqrt(this.x*this.x+this.y*this.y+this.z*this.z);
+        }
+    }
+});
+
+//Let's create one with default parameters
+var b = new Point3();
+echo(b);
+echo(b.length());
+b.x = 10;
+echo(b);
+</textarea>
+<div id="description2"><p>How about some constants and static functions</p></div>
+<textarea id="code2">
+//Let's define somem new Math tools
+Joop.define("Math2", {
+    statics:{
+        distance: function(a, b, p){
+            p = (p === undefined) ? 2 : p;//default is euclidian norm
+            var sum = 0;
+            if(p === 0){
+                //measure sparseness
+                for(var s in a){
+                    if(a.hasOwnProperty(s) && b.hasOwnProperty(s)){
+                        var d = a[s] - b[s];
+                        sum += d != 0 ? 1 : 0;
+                    }
+                }
+                return sum
+            } else {
+                for(var s in a){
+                    if(a.hasOwnProperty(s) && b.hasOwnProperty(s)){
+                        var d = Math.abs(a[s] - b[s]);
+                        sum += Math.pow(d, p);
+                    }
+                }
+                return Math.pow(sum, 1/p);
+            }
+        },
+        TWOPI: Math.PI*2,
+        RADTODEG: 180/Math.PI,
+        DEGTORAD: Math.PI/180
+    }
+});
+
+var a = new Point3(0, 1, 2);
+var b = new Point3(0, 0, 0);
+
+//euclidian geometry
+echo(Math2.distance(a, b, 2));
+//taxicab geometry
+echo(Math2.distance(a, b, 1));
+//sparseness
+echo(Math2.distance(a, b, 0));
+//a constant we have defined
+echo(Math2.TWOPI);
+</textarea>
+<script type="text/javascript">
+var example0 = new Example('Example 0: Defining a class', "0").display("examples");
+var example1 = new Example('Example 1: Inheriting from a class', "1").display("examples");
+var example3 = new Example('Example 2: Some static members', "2").display("examples");
+</script>
+</body></html>
