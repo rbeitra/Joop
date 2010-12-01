@@ -124,8 +124,8 @@ var Joop = Joop || function (classname, definition) {
     }
     return a;
 };
-Joop._ = Joop;
-Joop.$ = this;
+Joop._ = Joop;//set up self reference
+Joop.$ = this;//set up default scope
 Joop.k = {//keywords are editable if you don't like them
     d: 'def',       //definition
     p: 'proto',     //for prototypal inheritance
@@ -136,6 +136,3 @@ Joop.k = {//keywords are editable if you don't like them
     f: 'fun',       //function to be called when not constructing
     n: 'classname'  //is classname a good name for this?
 };
-//Joop.define = function (classname, definition) {
-//    Joop(classname, definition);
-//};
