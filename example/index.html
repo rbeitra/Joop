@@ -27,205 +27,130 @@ h1, h2, h3, h4, h5, h6{
     padding: 0.5em;    
 }
 .example{
-    padding: 0.5em;
+    padding: 0.5em 0.5em 2em 0.5em;
 }
-.example a{
+.button{
+    vertical-align: top;
     background-color: #f0f0f0;
     border: 0.1em solid #808080;
 }
 </style>
 <title>Joop</title>
 <script type="text/javascript" src="../src/joop-min.js"></script>
+<script type="text/javascript" src="./$.js"></script>
+<script type="text/javascript" src="./echo.js"></script>
 </head>
 <body>
 <script type="text/javascript">
-//a little println thing
-Joop.define('echo', {
-    fun: function(){
-        var s = ''
-        for(var i = 0; i < arguments.length; ++i){
-            s += (i?', ':'') + arguments[i];
-        }
-        echo.echoFunction(s);
-    },
-    statics: {
-        set: function(f){
-            echo.echoFunction = f;
-        },
-        restore: function(){
-            echo.set(function(){
-                document.write("<br/>\n");
-            });
-        },
-        object: function(o){
-            echo(o);
-            for(var n in o){
-                echo(n + ":" + o[n]);
-            }
-        },
-        echoFunction: function(){
-            document.write("<br/>\n");
-        },
-    }
-});
-
-//a utility class for manipulating the page
-Joop.define('$', {
-    fun: function(items){
-        return new $(items);
-    },
-    init: function(input){
-        if(typeof input === 'string'){
-            this.items = [];
-            var all = document.getElementsByTagName("*");
-            var matcher = $.matcher(input);
-            for(var i = 0, max = all.length; i < max; ++i){
-                var item = all[i];
-                if(matcher(item)){
-                    this[''+this.items.length] = item;
-                    this.items.push(item);
-                }
-            }
-        } else {
-            this.items = input
-        }
-    },
-    members:{
-        appendChild: function(){
-            for(var j = 0; j < arguments.length; ++j){
-                for(var i = 0, max = this.items.length; i < max; ++i){
-                    this.items[i].appendChild(arguments[j]);
-                }
-            }
-            return this;
-        },
-        appendChildTag: function(tagName, content, attributes){
-            for(var i = 0, max = this.items.length; i < max; ++i){
-                this.items[i].appendChild($.tag(tagName, content, attributes));
-            }
-            return this;
-        },
-        div: function(content, attributes){
-            this.appendChildTag('div', content, attributes);
-            return this;
-        },
-        p: function(content, attributes){
-            this.appendChildTag('p', content, attributes);
-            return this;
-        },
-        br: function(){
-            this.appendChildTag('br');
-            return this;
-        },
-        a: function(content, href, attributes){
-            attributes = attributes || {};
-            var old = attributes.href;
-            attributes.href = href;
-            this.appendChildTag('a', content, attributes);
-            attributes.href = old;
-            return this;
-        },
-        img: function(src, attributes){
-            attributes = attributes || {};
-            var old = attributes.src;
-            attributes.src = src;
-            this.appendChildTag('img', '', attributes);
-            attributes.src = old;
-            return this;
-        },
-        innerHTML: function(){
-            if(arguments.length > 0){
-                for(var i = 0, max = this.items.length; i < max; ++i){
-                    this.items[i].innerHTML = arguments[0];
-                }
-            }
-            return this;
-        },
-        attributes: function(attributes){
-            for(var i = 0, max = this.items.length; i < max; ++i){
-                $.attributes(this.items[i], attributes);
-            }
-            return this;
-        },
-        alert: function(){
-            for(var i = 0, max = this.items.length; i < max; ++i){
-                alert(this.items[i]);
-            }
-            return this;
-        }
-    },
-    statics: {
-        matcher: function(query){
-            if(query[0] === "#"){
-                var id = query.substring(1);
-                return function(item){return item.id == id;};
-            } else if(query[0] == '.'){
-                var className = query.substring(1);
-                return function(item){return item.className == className;};
-            } else {
-                var tagName = query.toUpperCase();
-                return function(item){return item.tagName == tagName;};
-            }
-        },
-        tag: function(tagName, content, attributes){
-            var result = document.createElement(tagName);
-            content = content || '';
-            $.attributes(result, attributes);
-            if(content != '') result.innerHTML = content;
-            return result;
-        },
-        attributes: function(element, attributes){
-            attributes = attributes || {};
-            if(attributes.id){
-                element.id = attributes.id;
-            }
-            if(attributes.className){
-                element.className = attributes.className;
-            }
-            for(var name in attributes){
-                if(name != 'id' && name != 'className'){
-                    element.setAttribute(name, attributes[name]);
-                }
-            }
-
-        }
-    }
-});
-
 //ok lets make a class for displaying examples
 Joop.define("Example", {
+    fun: function(id, name){
+        //create a new example and register it.
+        var example = new Example(name, id);
+    },
+    statics: {
+        ids: [],
+        examples: {},
+        display: function(parentID){
+            //display all examples in parentID
+            for(var i = 0; i < Example.ids.length; ++i){
+                Example.examples[Example.ids[i]].display(parentID);
+            }
+
+            //hide unused items
+            $('*').each(function(item, i){
+                var id;
+                var remove = false;
+                var idNames = ['out', 'code', 'description'];
+                for(var j in idNames){
+                    var name = idNames[j];
+                    if(item.id.indexOf(name) == 0){
+                        id = item.id.substr(name.length);
+                        if(Example.examples[id] === undefined){
+                            remove = true;
+                        }
+                    }
+                }
+                if(remove){
+                    item.parentNode.removeChild(item);
+                }
+            });
+        },
+        register: function(example, id){
+            Example.ids.push(id);
+            Example.examples[id] = example;
+            //alert(Example.ids);
+        },
+        index: function(id){
+            for(var i = 0; i < Example.ids.length; ++i){
+                if(Example.ids[i] == id){//match numbers and strings
+                    return i;
+                }
+            }            
+            return -1;
+        },
+        run: function(id){
+            //run all previous examples too...
+            var index = Example.index(id);
+            for(i = 0; i <= index; ++i){
+                Example.examples[Example.ids[i]].run();
+            }
+        },
+        clear: function(id){
+            Example.examples[id].clear();
+        }
+    },
     init: function(name, id){
         this.id = id;
-        this.name = name;
+        this.name = "Example " + this.id + ": " + name;
         Example.register(this, id);
-        this.codeid = "code"+this.id;
-        this.outid = "out"+this.id;
-        this.description = $("#description"+this.id)[0];
-        this.codeArea = $("#"+this.codeid)[0];
-        if(this.codeArea){
-            this.code = this.codeArea.value;
-            this.code = this.code.replace(/[\n]\/\/([^\n]*)\n/g, "\necho(\"\/\/$1\")\n");
-            eval("this.fun = function f() {" + this.code + "}");//yuck
-        }
-        //need to remove the containing function when we display
     },
     members: {
         display: function(parentID){
-            $('#'+parentID).div('', {id: "example"+this.id, className: 'example'});
-            var div = $('#example'+this.id);
-            div.appendChildTag('h3', this.name);
+            this.exampleid = 'example'+this.id;
+            this.codeid = "code"+this.id;
+            this.outid = "out"+this.id;
+            
+            this.description = $("#description"+this.id)[0];
+            this.codeArea = $("#"+this.codeid)[0];
+            this.outArea = $("#"+this.outid)[0];
+            if(this.codeArea){
+                this.code = this.codeArea.value;
+                this.code = this.code.replace(/[\n]\/\/([^\n]*)\n/g, "\necho(\"\/\/$1\")\n");
+                eval("this.fun = function f() {" + this.code + "}");//yuck
+            }
+            
+            $('#'+parentID).div('', {id: this.exampleid, className: 'example'});
+            var div = $('#'+this.exampleid);
+            $('#links').appendChildTag('a', this.name, {href: '#'+this.exampleid}).br();
+            div.appendChildTag('h3', '').appendChildTag('a', this.name, {name: this.exampleid});
+            var spacer = ' ';
+            div.span(spacer);
+            div.appendChildTag('a', 'Index', {href: '#index'});
+            div.span(spacer);
+            var index = Example.index(this.id);
+            if(index > 0){
+                div.appendChildTag('a', 'Prev', {href: '#example'+Example.ids[(index-1)]});
+                div.span(spacer);
+            }
+            if(index < Example.ids.length-1){
+                div.appendChildTag('a', 'Next', {href: '#example'+Example.ids[(index+1)]});
+                div.span(spacer);
+            }
             if(this.description){
                 div.appendChild(this.description);
             }
+            var numLines = 8;
             if(this.codeArea){
-                this.codeArea.parentNode.removeChild(this.codeArea);
                 div.appendChild(this.codeArea)
-                .appendChildTag('textarea', '', {id: this.outid})
-                .a('Run()', '#', {onclick: "Example.run("+this.id+"); return false;"});
-                var numLines = this.code.split("\n").length
+                numLines = this.code.split("\n").length
                 $("#"+this.codeid).attributes({cols: 80, rows: numLines, readOnly: true});
+            }
+            if(this.outArea){
+                div.appendChild(this.outArea);
                 $("#"+this.outid).attributes({cols: 40, rows: numLines, readOnly: true});
             }
+            div.a('Run()', '#', {className: 'button', onclick: "Example.run("+this.id+"); return false;"});
         },
         println: function(ln){
             $('#'+this.outid)[0].value += ln + "\n";
@@ -239,27 +164,14 @@ Joop.define("Example", {
             echo.set(function(ln){that.println(ln)});
             this.fun.apply(this);
         }
-    },
-    statics: {
-        examples: [],
-        register: function(example, id){
-            Example.examples[id] = example;
-        },
-        run: function(id){
-            //run all previous examples too...
-            for(var i = 0; i <= id; ++i){
-                Example.examples[i].run();
-            }
-        },
-        clear: function(id){
-            Example.examples[id].clear()
-        }
     }
 });
 
+$('body').appendChildTag('a', '', {name: 'index'});
 $('body').appendChildTag("h1", "Joop");
 $('body').div('', {id: 'examples'});
 $('#examples').appendChildTag("h2", "Let's try some examples");
+$('#examples').div('', {id: 'links'});
 </script>
 <div id="description0">
 <p>Let's define a new class, a 2d point</p>
@@ -275,7 +187,7 @@ Joop.define('Point2', {
             return Math.sqrt(this.x*this.x+this.y*this.y);
         },
         toString: function(){//a general purpose toString()
-            var result = this.classname+"{";
+            var result = (this.classname || '') + "{";
             for(var name in this){
                 if(this.hasOwnProperty(name)){
                     result += name+":" + this[name]+",";
@@ -295,6 +207,7 @@ echo("a.length(): " + a.length());//
 a.Point2(5, 12);
 echo(a);
 </textarea>
+<textarea id="out0"></textarea>
 <div id="description1"><p>Let's inherit from our Point2 class</p></div>
 <textarea id="code1">
 Joop.define('Point3', {
@@ -314,9 +227,12 @@ Joop.define('Point3', {
 var b = new Point3();
 echo(b);
 echo(b.length());
-b.x = 10;
+b.x = 5;
+b.y = 0;
+b.z = -5;
 echo(b);
 </textarea>
+<textarea id="out1"></textarea>
 <div id="description2"><p>How about some constants and static functions</p></div>
 <textarea id="code2">
 Joop.define("Math2", {
@@ -361,6 +277,7 @@ echo(Math2.distance(a, b, 0));
 //a constant we have defined
 echo(Math2.TWOPI);
 </textarea>
+<textarea id="out2"></textarea>
 <div id="description3"><p>Let's use the fun to do some new stuff</p></div>
 <textarea id="code3">
 Joop.define("Fun", {
@@ -378,15 +295,16 @@ var w = new Fun();
 
 //so lets try something
 Joop.define("PointN", {
+    base: [Point3],
+    statics: {
+        specialized: {Point2: Point2, Point3: Point3}//reuse these for some special cases
+    },
     fun: function(N){
+        if(N <= 0) return;
         var className = "Point"+N;
-        var specialized;
-        if(Joop.$[className] !== undefined){
-            echo("\/\/reusing definition of " + className);
-            specialized = Joop.$[className];
-        } else {
-            echo("\/\/creating definition for " + className);
-            var alpha = 'abcdefghijklmnopqrstuvwxyz';
+        if(!PointN.specialized[className]){
+            //create the definition for this N
+            var alpha = 'abcdefghijklmnopqrstuvwxyz';//use these variable names
             var varNames = [];
             for(var j = 0; j < N; ++j){
                 var varName = alpha[j%alpha.length];
@@ -395,7 +313,7 @@ Joop.define("PointN", {
                 }
                 varNames.push(varName);
             }
-            specialized = Joop.define(className, {
+            PointN.specialized[className] = Joop.define(className, {
                 base: [PointN],
                 init: function(){
                     var max = Math.min(arguments.length, N);
@@ -417,33 +335,78 @@ Joop.define("PointN", {
                     }
                 }
             });
+        } else {
+            //reuse the existing constructor for this N          
         }
-        return specialized;
+        return PointN.specialized[className];
+    }
+});
+
+//we can call it this way
+var a = new (PointN(5))();
+echo(a);
+//or, once Point5 has been defined, we can call it this way
+var b = new Point5(1, 2, 3, 4, 5);
+echo(b);
+var d = Math2.distance(new (PointN(6))(1, 2, 3, 4, 5, 6), new (PointN(6))(6, 5, 4, 3, 2, 1));
+echo(d);
+var c = new (PointN(3))(6, 7, 8);
+echo(c);
+</textarea>
+<textarea id="out3"></textarea>
+<div id="description4"><p>Lets try to keep things a bit tidy</p></div>
+<textarea id="code4">
+Joop.define("Package.Class", {
+    init: function(){
+        echo('I say, "' + OtherPackage.SubPackage.Class.greeting + '"!');
     },
-    members: {
-        toString: function(){//a general purpose toString()
-            var result = this.classname+"{";
-            for(var name in this){
-                if(this.hasOwnProperty(name)){
-                    result += name+":" + this[name]+",";
-                }
-            }
-            result += "}";
-            return result;
+    statics: {
+        greeting: "Goodbye World"
+    }
+});
+
+Joop.define("OtherPackage.SubPackage.Class", {
+    init: function(){
+        echo(Package.Class.greeting);
+    },
+    statics: {
+        greeting: "Hello World"
+    }
+});
+
+var a = new Package.Class();
+var b = new OtherPackage.SubPackage.Class();
+
+//Let's add some statics to Package
+Joop.define('Package', {
+    statics: {
+        log: function(s){
+            echo(this.classname + '.log: ' + s);
         }
     }
 });
 
-var a = new (PointN(5))();
-echo(a);
-var b = new (PointN(5))(1, 2, 3, 4, 5);
-echo(b);
-echo(b.length());
+Package.log('something');
+//let's fix that initializer...
+Package.Class.init = function(){
+    Package.log(OtherPackage.SubPackage.Class.greeting);
+}
+
+//Definitions are just stored as a tree. Package.Class is still defined, at the same level as Package.log, but now will use our new initializer.
+var c = new Package.Class();
+
 </textarea>
+<textarea id="out4"></textarea>
+<div id="description5"><p>Lets try to keep things a bit tidy</p></div>
+<textarea id="code5">
+</textarea>
+<textarea id="out5"></textarea>
 <script type="text/javascript">
-var example0 = new Example('Example 0: Defining a class', "0").display("examples");
-var example1 = new Example('Example 1: Inheriting from a class', "1").display("examples");
-var example3 = new Example('Example 2: Some static members', "2").display("examples");
-var example4 = new Example('Example 3: Fun stuff', "3").display("examples");
+Example('0', 'Defining a class');
+Example('1', 'Inheriting from a class');
+Example('2', 'Some static members');
+Example('3', 'Fun stuff');
+Example('4', 'Classnames and things');
+Example.display('examples');
 </script>
 </body></html>
