@@ -397,8 +397,19 @@ var c = new Package.Class();
 
 </textarea>
 <textarea id="out4"></textarea>
-<div id="description5"><p>Lets try to keep things a bit tidy</p></div>
+<div id="description5"><p>Let's make use some anonymous classes</p></div>
 <textarea id="code5">
+var a = Joop({
+    fun: function(){
+        echo('This is the anonymous class method.');
+    },
+    init: function(){
+        echo('This is the anonymous class constructor.');
+        echo('My classname is "'+this.classname+'".');
+    }
+});
+a();
+var b = new a();
 </textarea>
 <textarea id="out5"></textarea>
 <script type="text/javascript">
@@ -407,6 +418,7 @@ Example('1', 'Inheriting from a class');
 Example('2', 'Some static members');
 Example('3', 'Fun stuff');
 Example('4', 'Classnames and things');
+Example('5', 'Anonymity');
 Example.display('examples');
 </script>
 </body></html>

@@ -60,7 +60,7 @@ var Joop = Joop || function (classname, definition) {
         definition = classname;
         classname = '';
     }
-    var t = Joop._, k = t.k, a, b, i, j,//some local variables
+    var t = Joop, k = t.k, a, b, i, j,//some local variables
     //make some shorter vars for the syntax
         _x = k.x,//extend/inherit
         _m = k.m,//members
@@ -105,9 +105,9 @@ var Joop = Joop || function (classname, definition) {
         return a[_f].apply(a, b);
     };
     
+
     p[classname] = a;
     p[_n] = classname;
-    
     //set up class info etc
     a.prototype = p;//use proper keyword here
     a[k.d] = definition;//
@@ -124,7 +124,6 @@ var Joop = Joop || function (classname, definition) {
     }
     return a;
 };
-Joop._ = Joop;//set up self reference
 Joop.$ = this;//set up default scope
 Joop.k = {//keywords are editable if you don't like them
     d: 'def',       //definition
