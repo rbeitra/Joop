@@ -1,5 +1,5 @@
 //a utility class for manipulating the page
-Joop.define('$', {
+Joop('$', {
     fun: function(items){
         return new $(items);
     },

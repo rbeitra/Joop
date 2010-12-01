@@ -36,14 +36,14 @@ h1, h2, h3, h4, h5, h6{
 }
 </style>
 <title>Joop</title>
-<script type="text/javascript" src="../src/joop-min.js"></script>
+<script type="text/javascript" src="../src/joop.js"></script>
 <script type="text/javascript" src="./$.js"></script>
 <script type="text/javascript" src="./echo.js"></script>
 </head>
 <body>
 <script type="text/javascript">
 //ok lets make a class for displaying examples
-Joop.define("Example", {
+Joop("Example", {
     fun: function(id, name){
         //create a new example and register it.
         var example = new Example(name, id);
@@ -177,7 +177,7 @@ $('#examples').div('', {id: 'links'});
 <p>Let's define a new class, a 2d point</p>
 </div>
 <textarea id="code0">
-Joop.define('Point2', {
+Joop('Point2', {
     init: function(x, y){
         this.x = x || 0;
         this.y = y || 0;
@@ -210,7 +210,7 @@ echo(a);
 <textarea id="out0"></textarea>
 <div id="description1"><p>Let's inherit from our Point2 class</p></div>
 <textarea id="code1">
-Joop.define('Point3', {
+Joop('Point3', {
     base: [Point2],
     init: function(x, y, z){
         this.Point2(x, y);
@@ -235,7 +235,7 @@ echo(b);
 <textarea id="out1"></textarea>
 <div id="description2"><p>How about some constants and static functions</p></div>
 <textarea id="code2">
-Joop.define("Math2", {
+Joop("Math2", {
     statics:{
         distance: function(a, b, p){
             p = (p === undefined) ? 2 : p;//default is euclidian norm
@@ -280,7 +280,7 @@ echo(Math2.TWOPI);
 <textarea id="out2"></textarea>
 <div id="description3"><p>Let's use the fun to do some new stuff</p></div>
 <textarea id="code3">
-Joop.define("Fun", {
+Joop("Fun", {
     fun: function(){
         echo("This is the Fun() method");
     },
@@ -294,7 +294,7 @@ Fun();
 var w = new Fun();
 
 //so lets try something
-Joop.define("PointN", {
+Joop("PointN", {
     base: [Point3],
     statics: {
         specialized: {Point2: Point2, Point3: Point3}//reuse these for some special cases
@@ -313,7 +313,7 @@ Joop.define("PointN", {
                 }
                 varNames.push(varName);
             }
-            PointN.specialized[className] = Joop.define(className, {
+            PointN.specialized[className] = Joop(className, {
                 base: [PointN],
                 init: function(){
                     var max = Math.min(arguments.length, N);
@@ -356,7 +356,7 @@ echo(c);
 <textarea id="out3"></textarea>
 <div id="description4"><p>Lets try to keep things a bit tidy</p></div>
 <textarea id="code4">
-Joop.define("Package.Class", {
+Joop("Package.Class", {
     init: function(){
         echo('I say, "' + OtherPackage.SubPackage.Class.greeting + '"!');
     },
@@ -365,7 +365,7 @@ Joop.define("Package.Class", {
     }
 });
 
-Joop.define("OtherPackage.SubPackage.Class", {
+Joop("OtherPackage.SubPackage.Class", {
     init: function(){
         echo(Package.Class.greeting);
     },
@@ -378,7 +378,7 @@ var a = new Package.Class();
 var b = new OtherPackage.SubPackage.Class();
 
 //Let's add some statics to Package
-Joop.define('Package', {
+Joop('Package', {
     statics: {
         log: function(s){
             echo(this.classname + '.log: ' + s);
