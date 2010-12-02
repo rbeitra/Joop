@@ -23,10 +23,8 @@ THE SOFTWARE.
 */
 var Joop = Joop || function (classname, definition) {
     function c(source, target, preserve) {//copy values from one object to another
- //       pre = pre || '';
         for (var name in source) {
             if (source.hasOwnProperty(name) && !(preserve && target[name])) {
-                //l(target, pre+name, source[name]);
                 target[name] = source[name];
             }
         }
@@ -62,20 +60,18 @@ var Joop = Joop || function (classname, definition) {
     }
     var t = Joop, k = t.k, a, b, i, j,//some local variables
     //make some shorter vars for the syntax
-        _x = k.x,//extend/inherit
-        _m = k.m,//members
-        _s = k.s,//statics
-        _f = k.f,//non-constructor
-        _n = k.n,//classname
-        _c = k.c,//constructor
+        kx = k.x,//extend/inherit
+        km = k.m,//members
+        ks = k.s,//statics
+        kf = k.f,//non-constructor
+        kn = k.n,//classname
+        kc = k.c,//constructor
         G = f(e(definition, k.p, {})),//ensure we have a prototype
         p = new G();
-    //scope = scope || t.$;
        
     function l(value, target, path) {//link value at path in target.
         var endPart;
-        //target = target || t.$;//default target is default scope
-        path = path || value[t.k.n];
+        path = path || value[kn];
         endPart = path.split('.').pop();
         target = g(target, path, true, -1);//now get the parent, which could == target if parts.length == 1
         c(e(target, endPart, {}), value, 1);//preserve values from the new guy
@@ -83,10 +79,10 @@ var Joop = Joop || function (classname, definition) {
     } 
     
     //inherit from any base classes
-    a = e(definition, _x, []);
+    a = e(definition, kx, []);
     for (i = 0; i < a.length; i += 1) {
         j = a[i];
-        j = (typeof j === 'string') ? j : j[_n];//we accept Joop constructors and strings.
+        j = (typeof j === 'string') ? j : j[kn];//we accept Joop constructors and strings.
         b = g(t.$, j, false, 0);//find the constructor in our scope
         c(b.prototype, p);
         //copy(b.prototype, p, j + '.');//this is a bit pointless and makes huge messy classes
@@ -94,30 +90,31 @@ var Joop = Joop || function (classname, definition) {
     } 
     
     //add any members
-    c(e(definition, _m, {}), p);
+    c(e(definition, km, {}), p);
             
     //check if we have this constructor, if so run as constructor otherwise run as non-constructor!
     a = function () {
         b = arguments;
-        if (this[this[_n]]) {
-            return a[_c].apply(this, b);
+        if (this[this[kn]]) {
+            return a[kc].apply(this, b);
         }
-        return a[_f].apply(a, b);
+        return a[kf].apply(a, b);
     };
     
-
+    //set up prototype
     p[classname] = a;
-    p[_n] = classname;
+    p[kn] = classname;
+    
     //set up class info etc
     a.prototype = p;//use proper keyword here
     a[k.d] = definition;//
-    a[_c] = e(definition, _c, function () {//default constructor will take an init object and copy its contents
+    a[kc] = e(definition, kc, function () {//default constructor will take an init object and copy its contents
         c(arguments[0] || {}, this);
     });
-    a[_f] = e(definition, _f, f());//copy in non-constructor
-    c(e(definition, _s, {}), a);//copy in statics
+    a[kf] = e(definition, kf, f());//copy in non-constructor
+    c(e(definition, ks, {}), a);//copy in statics
 //        a[x] = definition[x];//copy in list of bases
-    a[_n] = classname;//set classname
+    a[kn] = classname;//set classname
     
     if (classname) {
         l(a, t.$);//a has a classname defined so t.l will use that

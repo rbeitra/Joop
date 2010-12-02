@@ -123,7 +123,6 @@ Joop('$', {
                     element.setAttribute(name, attributes[name]);
                 }
             }
-
         }
     }
 });

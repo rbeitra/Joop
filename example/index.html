@@ -36,7 +36,7 @@ h1, h2, h3, h4, h5, h6{
 }
 </style>
 <title>Joop</title>
-<script type="text/javascript" src="../src/joop.js"></script>
+<script type="text/javascript" src="../src/joop-min.js"></script>
 <script type="text/javascript" src="./$.js"></script>
 <script type="text/javascript" src="./echo.js"></script>
 </head>
@@ -173,8 +173,9 @@ $('body').div('', {id: 'examples'});
 $('#examples').appendChildTag("h2", "Let's try some examples");
 $('#examples').div('', {id: 'links'});
 </script>
+
 <div id="description0">
-<p>Let's define a new class, a 2d point</p>
+<p>Let's define a new class, a 2d point with a length function and a nice toString. The init function is called when constructing a new instance.</p>
 </div>
 <textarea id="code0">
 Joop('Point2', {
@@ -208,6 +209,7 @@ a.Point2(5, 12);
 echo(a);
 </textarea>
 <textarea id="out0"></textarea>
+
 <div id="description1"><p>Let's inherit from our Point2 class</p></div>
 <textarea id="code1">
 Joop('Point3', {
@@ -233,6 +235,7 @@ b.z = -5;
 echo(b);
 </textarea>
 <textarea id="out1"></textarea>
+
 <div id="description2"><p>How about some constants and static functions</p></div>
 <textarea id="code2">
 Joop("Math2", {
@@ -278,6 +281,7 @@ echo(Math2.distance(a, b, 0));
 echo(Math2.TWOPI);
 </textarea>
 <textarea id="out2"></textarea>
+
 <div id="description3"><p>Let's use the fun to do some new stuff</p></div>
 <textarea id="code3">
 Joop("Fun", {
@@ -354,6 +358,7 @@ var c = new (PointN(3))(6, 7, 8);
 echo(c);
 </textarea>
 <textarea id="out3"></textarea>
+
 <div id="description4"><p>Lets try to keep things a bit tidy</p></div>
 <textarea id="code4">
 Joop("Package.Class", {
@@ -397,7 +402,8 @@ var c = new Package.Class();
 
 </textarea>
 <textarea id="out4"></textarea>
-<div id="description5"><p>Let's make use some anonymous classes</p></div>
+
+<div id="description5"><p>Let's make some anonymous classes</p></div>
 <textarea id="code5">
 var a = Joop({
     fun: function(){
@@ -412,6 +418,127 @@ a();
 var b = new a();
 </textarea>
 <textarea id="out5"></textarea>
+
+<div id="description6"><p>Let's inherit prototypally</p></div>
+<textarea id="code6">
+Joop('Creature', {
+    init: function(name){
+        this.name = name;
+        this.greet();
+    },
+    members: {
+        greet: function(){
+            echo(this.name + ' say Grrrawr! Me '+this.classname);
+        },
+        spawn: function(){
+            var cname = this.classname;
+            var c = Joop(this.classname+'son', {
+                proto: this,
+                init: function(name){
+                    this.name = name;
+                    this.greet();
+                },
+                fun: function(){
+                    echo('fun');
+                }
+            });
+            
+            return new c(this.name+'son');
+        }
+    }
+});
+
+var spot = new Creature('Spot');
+//let's create a distant descendant
+var greatgrandson = spot.spawn().spawn().spawn();
+
+//Let's change the original object
+spot.greet = function(){
+    echo('My name is '+ this.name + '. I am a ' + this.classname);
+}
+//we now get the new version via the prototype
+greatgrandson.greet();
+
+</textarea>
+<textarea id="out6"></textarea>
+
+<div id="description7"><p>Let's inherit from multiple classes</p></div>
+<textarea id="code7">
+Joop('LogPrinter', {
+    members: {
+        printOne: function(s){
+            this.lineNumber = this.lineNumber || 0;
+            echo(this.lineNumber + ": " + s);
+            ++this.lineNumber;
+        },
+        print: function(){
+            for(var i = 0; i < arguments.length; ++i){
+                this.printOne(arguments[i]);
+            }
+        }
+    }
+});
+
+Joop('ClockRunner', {
+    members: {
+        start: function(){
+            ClockRunner.register(this);
+            ClockRunner.start();//make sure it is running          
+        },
+        tick: function(now){
+            //called on a tick, now is the current Date
+        }
+    },
+    statics: {
+        clock: function(){
+            if(!ClockRunner.running) return;
+            var now = new Date();
+            for(var id in ClockRunner.runners){
+                ClockRunner.runners[id].tick(now);
+            }
+            ClockRunner.next();
+        },
+        next: function(){
+            self.setTimeout("ClockRunner.clock()", 1000 - new Date().getMilliseconds());
+        },
+        start: function(){
+            if(!ClockRunner.running){
+                ClockRunner.running = true;
+                ClockRunner.next();
+            }
+        },
+        stop: function(){
+            ClockRunner.running = false;
+        },
+        register: function(runner){
+            runner.id = ClockRunner.nextID++;
+            ClockRunner.runners[runner.id] = runner;
+        },
+        running: false,
+        runners: {},
+        nextID: 0
+    }
+});
+
+//The ClockPrinter class will tie together the tick() and print() functions
+Joop('ClockPrinter', {
+    base: [ClockRunner, LogPrinter],
+    members: {
+        tick: function(now){
+            var parts = [now.getHours(), now.getMinutes(), now.getSeconds()];
+            this.print('The time is now ' + parts.join(':'));
+        }
+    }
+});
+
+var a = new ClockPrinter();
+a.start();
+
+</textarea>
+<textarea id="out7"></textarea>
+
+
+
 <script type="text/javascript">
 Example('0', 'Defining a class');
 Example('1', 'Inheriting from a class');
@@ -419,6 +546,8 @@ Example('2', 'Some static members');
 Example('3', 'Fun stuff');
 Example('4', 'Classnames and things');
 Example('5', 'Anonymity');
+Example('6', 'Prototypally');
+Example('7', 'Mixing it up');
 Example.display('examples');
 </script>
 </body></html>
