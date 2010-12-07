@@ -8,13 +8,17 @@ Joop('echo', {
         echo.echoFunction(s);
     },
     statics: {
-        set: function(f){
+        clear: function(){
+            
+        },
+        set: function(f, c){
             echo.echoFunction = f;
+            echo.clearFunction = c;
         },
         restore: function(){
             echo.set(function(){
                 document.write("<br/>\n");
-            });
+            }, function(){});
         },
         object: function(o){
             echo(o);
@@ -22,8 +26,14 @@ Joop('echo', {
                 echo(n + ":" + o[n]);
             }
         },
+        clear: function(){
+            echo.clearFunction();
+        },
         echoFunction: function(){
             document.write("<br/>\n");
         },
+        clearFunction: function(){
+            //do nothing
+        }
     }
 });

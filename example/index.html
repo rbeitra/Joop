@@ -34,6 +34,10 @@ h1, h2, h3, h4, h5, h6{
     background-color: #f0f0f0;
     border: 0.1em solid #808080;
 }
+.code{
+    font-family: "DejaVu Sans Mono", Monaco, "Courier New", Courier, monospace, sans-serif;
+    font-size: 75%;
+}
 </style>
 <title>Joop</title>
 <script type="text/javascript" src="../src/joop-min.js"></script>
@@ -102,7 +106,7 @@ Joop("Example", {
     },
     init: function(name, id){
         this.id = id;
-        this.name = "Example " + this.id + ": " + name;
+        this.name = this.id + ": " + name;
         Example.register(this, id);
     },
     members: {
@@ -144,11 +148,11 @@ Joop("Example", {
             if(this.codeArea){
                 div.appendChild(this.codeArea)
                 numLines = this.code.split("\n").length
-                $("#"+this.codeid).attributes({cols: 80, rows: numLines, readOnly: true});
+                $("#"+this.codeid).attributes({cols: 80, rows: numLines, readOnly: true, className: 'code'});
             }
             if(this.outArea){
                 div.appendChild(this.outArea);
-                $("#"+this.outid).attributes({cols: 40, rows: numLines, readOnly: true});
+                $("#"+this.outid).attributes({cols: 40, rows: numLines, readOnly: true, className: 'code'});
             }
             div.a('Run()', '#', {className: 'button', onclick: "Example.run("+this.id+"); return false;"});
         },
@@ -161,7 +165,7 @@ Joop("Example", {
         run: function(){
             this.clear();
             var that = this;
-            echo.set(function(ln){that.println(ln)});
+            echo.set(function(ln){that.println(ln)}, function(){that.clear()});
             this.fun.apply(this);
         }
     }
@@ -301,7 +305,7 @@ var w = new Fun();
 Joop("PointN", {
     base: [Point3],
     statics: {
-        specialized: {Point2: Point2, Point3: Point3}//reuse these for some special cases
+        specialized: {Point2: Point2, Point3: Point3}//special case reuse
     },
     fun: function(N){
         if(N <= 0) return;
@@ -450,14 +454,18 @@ Joop('Creature', {
 
 var spot = new Creature('Spot');
 //let's create a distant descendant
-var greatgrandson = spot.spawn().spawn().spawn();
+var grandson = spot.spawn().spawn();
+grandson.greet();
 
 //Let's change the original object
 spot.greet = function(){
     echo('My name is '+ this.name + '. I am a ' + this.classname);
 }
-//we now get the new version via the prototype
-greatgrandson.greet();
+//And let's change the grandsons name
+grandson.name = 'Rover';
+
+//We should get the new greet() via the prototype
+var gggrandson = grandson.spawn().spawn();
 
 </textarea>
 <textarea id="out6"></textarea>
@@ -467,8 +475,16 @@ greatgrandson.greet();
 Joop('LogPrinter', {
     members: {
         printOne: function(s){
+            this.lines = this.lines || [];
             this.lineNumber = this.lineNumber || 0;
-            echo(this.lineNumber + ": " + s);
+            this.lines.push(this.lineNumber + ": " + s);
+            if(this.lines.length > 5){
+                this.lines.splice(0, 1);
+            }
+            echo.clear();
+            for(var i = 0; i < this.lines.length; ++i){
+                echo(this.lines[i]);
+            }
             ++this.lineNumber;
         },
         print: function(){
@@ -534,8 +550,8 @@ Joop('DateFormatter', {
     members: {
         format: function(date){
             var result = this.formatString;
-            result = result.replace('%Y', this.pad(date.getYear(), 2, '0'));
-            result = result.replace('%M', this.pad(date.getMonth(), 2, '0'));
+            result = result.replace('%Y', date.getFullYear());
+            result = result.replace('%M', this.pad(date.getMonth()+1, 2, '0'));
             result = result.replace('%D', this.pad(date.getDate(), 2, '0'));
             result = result.replace('%h', this.pad(date.getHours(), 2, '0'));
             result = result.replace('%m', this.pad(date.getMinutes(), 2, '0'));
@@ -553,7 +569,7 @@ Joop('DateFormatter', {
     }
 });
 
-//The ClockFormatPrinter class will tie together the tick(), format() and print() functions
+//The ClockFormatPrinter class will tie together the tick(), format() and print() functionality
 Joop('ClockFormatPrinter', {
     base: [ClockRunner, LogPrinter, DateFormatter],
     init: function(){
