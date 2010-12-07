@@ -493,13 +493,19 @@ Joop('ClockRunner', {
         clock: function(){
             if(!ClockRunner.running) return;
             var now = new Date();
-            for(var id in ClockRunner.runners){
-                ClockRunner.runners[id].tick(now);
+            var nowTime = now.getTime();
+            if(nowTime >= ClockRunner.nextTick){
+                ClockRunner.nextTick = 1000 + nowTime - nowTime%1000
+                for(var id in ClockRunner.runners){
+                    ClockRunner.runners[id].tick(now);
+                }
             }
             ClockRunner.next();
         },
         next: function(){
-            self.setTimeout("ClockRunner.clock()", 1000 - new Date().getMilliseconds());
+            var delay = ClockRunner.nextTick - (new Date().getTime());
+            if(delay < 0) delay = 0;
+            self.setTimeout("ClockRunner.clock()", delay);
         },
         start: function(){
             if(!ClockRunner.running){
@@ -516,22 +522,51 @@ Joop('ClockRunner', {
         },
         running: false,
         runners: {},
-        nextID: 0
+        nextID: 0,
+        nextTick: 0
     }
 });
-
-//The ClockPrinter class will tie together the tick() and print() functions
-Joop('ClockPrinter', {
-    base: [ClockRunner, LogPrinter],
+Joop('DateFormatter', {
+    init: function(formatString){
+        formatString = formatString || '';
+        this.formatString = formatString;
+    },
     members: {
-        tick: function(now){
-            var parts = [now.getHours(), now.getMinutes(), now.getSeconds()];
-            this.print('The time is now ' + parts.join(':'));
+        format: function(date){
+            var result = this.formatString;
+            result = result.replace('%Y', this.pad(date.getYear(), 2, '0'));
+            result = result.replace('%M', this.pad(date.getMonth(), 2, '0'));
+            result = result.replace('%D', this.pad(date.getDate(), 2, '0'));
+            result = result.replace('%h', this.pad(date.getHours(), 2, '0'));
+            result = result.replace('%m', this.pad(date.getMinutes(), 2, '0'));
+            result = result.replace('%s', this.pad(date.getSeconds(), 2, '0'));
+            return result;
+        },
+        pad: function(s, l, c){
+            c = c || '0';
+            s = '' + s;
+            while(s.length < l){
+                s = c + s;
+            }
+            return s;
         }
     }
 });
 
-var a = new ClockPrinter();
+//The ClockFormatPrinter class will tie together the tick(), format() and print() functions
+Joop('ClockFormatPrinter', {
+    base: [ClockRunner, LogPrinter, DateFormatter],
+    init: function(){
+        this.DateFormatter('%h:%m:%s');//call an inherited constructor
+    },
+    members: {
+        tick: function(now){
+            this.print('The time is now ' + this.format(now));
+        }
+    }
+});
+
+var a = new ClockFormatPrinter();
 a.start();
 
 </textarea>

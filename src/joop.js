@@ -53,7 +53,6 @@ var Joop = Joop || function (classname, definition) {
         }
         return target;
     }
-    //function d(classname, definition, scope) {//create a constructor and link it in in some scope, or globally
     if (!definition) {
         definition = classname;
         classname = '';
