@@ -40,144 +40,8 @@ h1, h2, h3, h4, h5, h6{
 }
 </style>
 <title>Joop</title>
-<script type="text/javascript" src="../src/joop-min.js"></script>
-<script type="text/javascript" src="./$.js"></script>
-<script type="text/javascript" src="./echo.js"></script>
 </head>
 <body>
-<script type="text/javascript">
-//ok lets make a class for displaying examples
-Joop("Example", {
-    fun: function(id, name){
-        //create a new example and register it.
-        var example = new Example(name, id);
-    },
-    statics: {
-        ids: [],
-        examples: {},
-        display: function(parentID){
-            //display all examples in parentID
-            for(var i = 0; i < Example.ids.length; ++i){
-                Example.examples[Example.ids[i]].display(parentID);
-            }
-
-            //hide unused items
-            $('*').each(function(item, i){
-                var id;
-                var remove = false;
-                var idNames = ['out', 'code', 'description'];
-                for(var j in idNames){
-                    var name = idNames[j];
-                    if(item.id.indexOf(name) == 0){
-                        id = item.id.substr(name.length);
-                        if(Example.examples[id] === undefined){
-                            remove = true;
-                        }
-                    }
-                }
-                if(remove){
-                    item.parentNode.removeChild(item);
-                }
-            });
-        },
-        register: function(example, id){
-            Example.ids.push(id);
-            Example.examples[id] = example;
-            //alert(Example.ids);
-        },
-        index: function(id){
-            for(var i = 0; i < Example.ids.length; ++i){
-                if(Example.ids[i] == id){//match numbers and strings
-                    return i;
-                }
-            }            
-            return -1;
-        },
-        run: function(id){
-            //run all previous examples too...
-            var index = Example.index(id);
-            for(i = 0; i <= index; ++i){
-                Example.examples[Example.ids[i]].run();
-            }
-        },
-        clear: function(id){
-            Example.examples[id].clear();
-        }
-    },
-    init: function(name, id){
-        this.id = id;
-        this.name = this.id + ": " + name;
-        Example.register(this, id);
-    },
-    members: {
-        display: function(parentID){
-            this.exampleid = 'example'+this.id;
-            this.codeid = "code"+this.id;
-            this.outid = "out"+this.id;
-            
-            this.description = $("#description"+this.id)[0];
-            this.codeArea = $("#"+this.codeid)[0];
-            this.outArea = $("#"+this.outid)[0];
-            if(this.codeArea){
-                this.code = this.codeArea.value;
-                this.code = this.code.replace(/[\n]\/\/([^\n]*)\n/g, "\necho(\"\/\/$1\")\n");
-                eval("this.fun = function f() {" + this.code + "}");//yuck
-            }
-            
-            $('#'+parentID).div('', {id: this.exampleid, className: 'example'});
-            var div = $('#'+this.exampleid);
-            $('#links').appendChildTag('a', this.name, {href: '#'+this.exampleid}).br();
-            div.appendChildTag('h3', '').appendChildTag('a', this.name, {name: this.exampleid});
-            var spacer = ' ';
-            div.span(spacer);
-            div.appendChildTag('a', 'Index', {href: '#index'});
-            div.span(spacer);
-            var index = Example.index(this.id);
-            if(index > 0){
-                div.appendChildTag('a', 'Prev', {href: '#example'+Example.ids[(index-1)]});
-                div.span(spacer);
-            }
-            if(index < Example.ids.length-1){
-                div.appendChildTag('a', 'Next', {href: '#example'+Example.ids[(index+1)]});
-                div.span(spacer);
-            }
-            if(this.description){
-                div.appendChild(this.description);
-            }
-            var numLines = 8;
-            if(this.codeArea){
-                div.appendChild(this.codeArea)
-                numLines = this.code.split("\n").length
-                $("#"+this.codeid).attributes({cols: 80, rows: numLines, readOnly: true, className: 'code'});
-            }
-            if(this.outArea){
-                div.appendChild(this.outArea);
-                $("#"+this.outid).attributes({cols: 40, rows: numLines, readOnly: true, className: 'code'});
-            }
-            div.a('Run()', '#', {className: 'button', onclick: "Example.run("+this.id+"); return false;"});
-        },
-        println: function(ln){
-            $('#'+this.outid)[0].value += ln + "\n";
-        },
-        clear: function(){
-            $('#'+this.outid)[0].value = '';
-        },
-        run: function(){
-            this.clear();
-            var that = this;
-            echo.set(function(ln){that.println(ln)}, function(){that.clear()});
-            this.fun.apply(this);
-        }
-    }
-});
-
-$('body').appendChildTag('a', '', {name: 'index'});
-$('body').appendChildTag("h1", "Joop");
-$('body').div('', {id: 'examples'});
-$('#examples').appendChildTag("h2", "Let's try some examples");
-$('#examples').div('', {id: 'links'});
-</script>
-
 <div id="description0">
 <p>Let's define a new class, a 2d point with a length function and a nice toString. The init function is called when constructing a new instance.</p>
 </div>
@@ -244,27 +108,30 @@ echo(b);
 <textarea id="code2">
 Joop("Math2", {
     statics:{
+        pow: function(x, y){
+            //slightly different to Math.pow. return 0 if x === 0
+            if(x === 0) return 0;
+            return Math.pow(x, y);
+        },
         distance: function(a, b, p){
             p = (p === undefined) ? 2 : p;//default is euclidian norm
             var sum = 0;
-            if(p === 0){
-                //measure sparseness
-                for(var s in a){
-                    if(a.hasOwnProperty(s) && b.hasOwnProperty(s)){
-                        var d = a[s] - b[s];
-                        sum += d != 0 ? 1 : 0;
-                    }
+            for(var s in a){
+                if(a.hasOwnProperty(s) && b.hasOwnProperty(s)){
+                    var d = Math.abs(a[s] - b[s]);
+                    //we can refer to statics using the class name
+                    sum += Math2.pow(d, p);
                 }
-                return sum
-            } else {
-                for(var s in a){
-                    if(a.hasOwnProperty(s) && b.hasOwnProperty(s)){
-                        var d = Math.abs(a[s] - b[s]);
-                        sum += Math.pow(d, p);
-                    }
-                }
-                return Math.pow(sum, 1/p);
             }
+            if(p === 0){
+                return sum;//this will be a measure of sparsity
+            } else {
+                //or we can refer to them from WITHIN a static using "this"
+                return this.pow(sum, 1/p);//normal behaviour
+            }
+        },
+        circumference: function(radius){
+            return Math.PI*radius*radius;
         },
         TWOPI: Math.PI*2,
         RADTODEG: 180/Math.PI,
@@ -273,7 +140,9 @@ Joop("Math2", {
 });
 
 var a = new Point3(0, 1, 2);
-var b = new Point3(0, 0, 0);
+var b = new Point3(2, 1, 0);
+
+echo('Distance between ' + a + ' and ' + b);
 
 //euclidian geometry
 echo(Math2.distance(a, b, 2));
@@ -473,6 +342,10 @@ var gggrandson = grandson.spawn().spawn();
 <div id="description7"><p>Let's inherit from multiple classes</p></div>
 <textarea id="code7">
 Joop('LogPrinter', {
+    init: function(printFun, clearFun){
+        this.printFun = printFun;
+        this.clearFun = clearFun;
+    },
     members: {
         printOne: function(s){
             this.lines = this.lines || [];
@@ -481,9 +354,9 @@ Joop('LogPrinter', {
             if(this.lines.length > 5){
                 this.lines.splice(0, 1);
             }
-            echo.clear();
+            this.clearFun();
             for(var i = 0; i < this.lines.length; ++i){
-                echo(this.lines[i]);
+                this.printFun(this.lines[i]);
             }
             ++this.lineNumber;
         },
@@ -501,40 +374,46 @@ Joop('ClockRunner', {
             ClockRunner.register(this);
             ClockRunner.start();//make sure it is running          
         },
+        stop: function(){
+            ClockRunner.unregister(this);
+        },
         tick: function(now){
             //called on a tick, now is the current Date
         }
     },
     statics: {
         clock: function(){
-            if(!ClockRunner.running) return;
+            if(!this.running) return;
             var now = new Date();
             var nowTime = now.getTime();
-            if(nowTime >= ClockRunner.nextTick){
-                ClockRunner.nextTick = 1000 + nowTime - nowTime%1000
-                for(var id in ClockRunner.runners){
-                    ClockRunner.runners[id].tick(now);
+            if(nowTime >= this.nextTick){
+                this.nextTick = 1000 + nowTime - nowTime%1000
+                for(var id in this.runners){
+                    this.runners[id].tick(now);
                 }
             }
-            ClockRunner.next();
+            this.next();
         },
         next: function(){
-            var delay = ClockRunner.nextTick - (new Date().getTime());
+            var delay = this.nextTick - (new Date().getTime());
             if(delay < 0) delay = 0;
             self.setTimeout("ClockRunner.clock()", delay);
         },
         start: function(){
-            if(!ClockRunner.running){
-                ClockRunner.running = true;
-                ClockRunner.next();
+            if(!this.running){
+                this.running = true;
+                this.next();
             }
         },
         stop: function(){
-            ClockRunner.running = false;
+            this.running = false;
         },
         register: function(runner){
-            runner.id = ClockRunner.nextID++;
-            ClockRunner.runners[runner.id] = runner;
+            runner.id = this.nextID++;
+            this.runners[runner.id] = runner;
+        },
+        unregister: function(runner){
+            delete(this.runners[runner.id]);
         },
         running: false,
         runners: {},
@@ -574,6 +453,7 @@ Joop('ClockFormatPrinter', {
     base: [ClockRunner, LogPrinter, DateFormatter],
     init: function(){
         this.DateFormatter('%h:%m:%s');//call an inherited constructor
+        this.LogPrinter(echo.echoFunction, echo.clearFunction);
     },
     members: {
         tick: function(now){
@@ -588,9 +468,141 @@ a.start();
 </textarea>
 <textarea id="out7"></textarea>
 
-
-
+<script type="text/javascript" src="../src/joop.js"></script>
+<script type="text/javascript" src="./$.js"></script>
+<script type="text/javascript" src="./echo.js"></script>
 <script type="text/javascript">
+//ok lets make a class for displaying examples
+Joop("Example", {
+    fun: function(id, name){
+        //create a new example and register it.
+        var example = new Example(name, id);
+    },
+    statics: {
+        ids: [],
+        examples: {},
+        display: function(parentID){
+            //display all examples in parentID
+            for(var i = 0; i < Example.ids.length; ++i){
+                Example.examples[Example.ids[i]].display(parentID);
+            }
+
+            //hide unused items
+            $('*').each(function(item, i){
+                var id;
+                var remove = false;
+                var idNames = ['out', 'code', 'description'];
+                for(var j in idNames){
+                    var name = idNames[j];
+                    if(item.id.indexOf(name) == 0){
+                        id = item.id.substr(name.length);
+                        if(Example.examples[id] === undefined){
+                            remove = true;
+                        }
+                    }
+                }
+                if(remove){
+                    item.parentNode.removeChild(item);
+                }
+            });
+        },
+        register: function(example, id){
+            Example.ids.push(id);
+            Example.examples[id] = example;
+            //alert(Example.ids);
+        },
+        index: function(id){
+            for(var i = 0; i < Example.ids.length; ++i){
+                if(Example.ids[i] == id){//match numbers and strings
+                    return i;
+                }
+            }            
+            return -1;
+        },
+        run: function(id){
+            //run all previous examples too...
+            var index = Example.index(id);
+            for(i = 0; i <= index; ++i){
+                Example.examples[Example.ids[i]].run();
+            }
+        },
+        clear: function(id){
+            Example.examples[id].clear();
+        }
+    },
+    init: function(name, id){
+        this.id = id;
+        this.name = this.id + ": " + name;
+        Example.register(this, id);
+    },
+    members: {
+        display: function(parentID){
+            this.exampleid = 'example'+this.id;
+            this.codeid = "code"+this.id;
+            this.outid = "out"+this.id;
+            
+            this.description = $("#description"+this.id)[0];
+            this.codeArea = $("#"+this.codeid)[0];
+            this.outArea = $("#"+this.outid)[0];
+            if(this.codeArea){
+                this.code = this.codeArea.value;
+                this.code = this.code.replace(/[\n]\/\/([^\n]*)\n/g, "\necho(\"\/\/$1\")\n");
+                eval("this.fun = function f() {" + this.code + "}");//yuck
+            }
+            
+            $('#'+parentID).div('', {id: this.exampleid, className: 'example'});
+            var div = $('#'+this.exampleid);
+            $('#links').appendChildTag('a', this.name, {href: '#'+this.exampleid}).br();
+            div.appendChildTag('h3', '').appendChildTag('a', this.name, {name: this.exampleid});
+            var spacer = ' ';
+            div.span(spacer);
+            div.appendChildTag('a', 'Index', {href: '#index'});
+            div.span(spacer);
+            var index = Example.index(this.id);
+            if(index > 0){
+                div.appendChildTag('a', 'Prev', {href: '#example'+Example.ids[(index-1)]});
+                div.span(spacer);
+            }
+            if(index < Example.ids.length-1){
+                div.appendChildTag('a', 'Next', {href: '#example'+Example.ids[(index+1)]});
+                div.span(spacer);
+            }
+            if(this.description){
+                div.appendChild(this.description);
+            }
+            var numLines = 8;
+            if(this.codeArea){
+                div.appendChild(this.codeArea)
+                numLines = this.code.split("\n").length
+                $("#"+this.codeid).attributes({cols: 80, rows: numLines, readOnly: true, className: 'code'});
+            }
+            if(this.outArea){
+                div.appendChild(this.outArea);
+                $("#"+this.outid).attributes({cols: 40, rows: numLines, readOnly: true, className: 'code'});
+            }
+            div.a('Run()', '#', {className: 'button', onclick: "Example.run("+this.id+"); return false;"});
+        },
+        println: function(ln){
+            $('#'+this.outid)[0].value += ln + "\n";
+        },
+        clear: function(){
+            $('#'+this.outid)[0].value = '';
+        },
+        run: function(){
+            this.clear();
+            var that = this;
+            echo.set(function(ln){that.println(ln)}, function(){that.clear()});
+            this.fun.apply(this);
+        }
+    }
+});
+
+$('body').appendChildTag('a', '', {name: 'index'});
+$('body').appendChildTag("h1", "Joop");
+$('body').div('', {id: 'examples'});
+$('#examples').appendChildTag("h2", "Let's try some examples");
+$('#examples').div('', {id: 'links'});
+
 Example('0', 'Defining a class');
 Example('1', 'Inheriting from a class');
 Example('2', 'Some static members');
